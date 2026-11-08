@@ -55,6 +55,23 @@ public class ResultTests(RaceDayApiFactory factory) : IClassFixture<RaceDayApiFa
     }
 
     [Fact]
+    public async Task TotalFinishers_IsAtLeastTheHighestPositionRecorded()
+    {
+        var organiser = await ApiTestHelpers.OrganiserClientAsync(factory);
+        var eventId = await ApiTestHelpers.CreateEventAsync(organiser);
+        var categoryId = await ApiTestHelpers.CreateCategoryAsync(organiser, eventId);
+        var participant = await ApiTestHelpers.ParticipantClientAsync(factory);
+        var enrolment = await ApiTestHelpers.ReadAsync<EnrolmentResponse>(
+            await participant.PostAsJsonAsync($"/api/events/{eventId}/enrol", new EnrolRequest(categoryId)));
+
+        // Only one RaceDay entrant is captured, but they came 312th, so at least 312 people finished.
+        var captured = await ApiTestHelpers.ReadAsync<ResultResponse>(
+            await organiser.PostAsJsonAsync($"/api/events/{eventId}/results", new ResultRequest(enrolment!.EnrolmentId, "04:10:00", 312)));
+
+        Assert.Equal(312, captured!.TotalFinishers);
+    }
+
+    [Fact]
     public async Task Organiser_CapturesASecondResultForTheSameEnrolment_Returns400()
     {
         var organiser = await ApiTestHelpers.OrganiserClientAsync(factory);

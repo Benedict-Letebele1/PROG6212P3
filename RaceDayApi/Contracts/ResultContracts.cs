@@ -9,8 +9,9 @@ public record ResultRequest(int EnrolmentId, string FinishTime, int FinishPositi
 public record UpdateResultRequest(string FinishTime, int FinishPosition);
 
 /// <summary>
-/// A recorded result for one enrolment. TotalFinishers is the number of results recorded for the same event,
-/// so a page can show "47th out of 312".
+/// A recorded result for one enrolment. TotalFinishers is the size of the finishing field for the same event:
+/// the number of results recorded, or the highest position recorded if that is larger. A page can then show
+/// "47th out of 312".
 /// </summary>
 public record ResultResponse(
     int ResultId,

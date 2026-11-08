@@ -65,7 +65,8 @@ public class ResultsController(RaceDayDbContext db, OrganiserAccess access) : Co
             .OrderBy(r => r.FinishPosition)
             .ToListAsync(cancellationToken);
 
-        return Ok(results.Select(r => Mappers.ToResult(r, results.Count)).ToList());
+        var finishers = await FinisherCountsAsync([eventId], cancellationToken);
+        return Ok(results.Select(r => Mappers.ToResult(r, finishers[eventId])).ToList());
     }
 
     /// <summary>Records the finish time and position for one enrolment in an event the logged-in organiser owns.</summary>
@@ -175,15 +176,19 @@ public class ResultsController(RaceDayDbContext db, OrganiserAccess access) : Co
         return Ok(Mappers.ToResult(result, eventFinishers[result.Enrolment.EventID]));
     }
 
-    /// <summary>Counts the recorded results per event, so each result can say how many people finished.</summary>
+    /// <summary>
+    /// Works out how many people finished each event, so each result can say "47th out of 312". Organisers only
+    /// capture results for participants who entered through RaceDay, so the field can be bigger than the number
+    /// of results. The count is the larger of the number of results and the highest position recorded.
+    /// </summary>
     private async Task<Dictionary<int, int>> FinisherCountsAsync(IEnumerable<int> eventIds, CancellationToken cancellationToken)
     {
         var ids = eventIds.Distinct().ToList();
         var counts = await db.Results.AsNoTracking()
             .Where(r => ids.Contains(r.Enrolment.EventID))
             .GroupBy(r => r.Enrolment.EventID)
-            .Select(g => new { EventId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.EventId, x => x.Count, cancellationToken);
+            .Select(g => new { EventId = g.Key, Count = g.Count(), Highest = g.Max(r => r.FinishPosition) })
+            .ToDictionaryAsync(x => x.EventId, x => Math.Max(x.Count, x.Highest), cancellationToken);
 
         foreach (var id in ids)
         {
