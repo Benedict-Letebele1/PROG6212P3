@@ -26,7 +26,7 @@
             <div class="container">
                 <a class="navbar-brand rd-brand" asp-controller="@(user?.IsOrganiser == true ? "Organiser" : "Home")" asp-action="@(user?.IsOrganiser == true ? "Dashboard" : "Index")">
                     <span class="rd-brand-mark"><i class="bi bi-flag-fill"></i></span>
-                    RACE<span>DAY</span>
+                    <span class="rd-brand-text">RACE<span>DAY</span></span>
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
                         aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
