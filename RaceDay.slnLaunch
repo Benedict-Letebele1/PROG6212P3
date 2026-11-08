@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "API + Web (Part 3)",
+    "Projects": [
+      {
+        "Path": "RaceDayApi\RaceDayApi.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
+      },
+      {
+        "Path": "RaceDayWeb\RaceDayWeb.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
+      }
+    ]
+  }
+]
