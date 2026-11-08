@@ -1,4 +1,4 @@
-name: RaceDay API - Build and Test
+name: RaceDay - Build and Test (API and MVC)
 
 on:
   push:
@@ -7,10 +7,21 @@ on:
 
 jobs:
   build-and-test:
+    name: Build the solution and run all tests
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
+
+      - name: Check the repository has every Part 1, 2 and 3 file
+        run: |
+          for file in README.md Dockerfile .dockerignore RaceDay.sln \
+                      docs/erd.png docs/endpoint-plan.pdf docs/RaceDay-Schema.sql \
+                      RaceDayApi/RaceDayApi.csproj RaceDayApi/Services/AzureBlobImageStorage.cs \
+                      RaceDayWeb/RaceDayWeb.csproj RaceDayWeb.Tests/RaceDayWeb.Tests.csproj; do
+            if [ ! -f "$file" ]; then echo "Missing required file: $file"; exit 1; fi
+          done
+          echo "All required files are present."
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
@@ -23,11 +34,15 @@ jobs:
       - name: Restore NuGet packages
         run: dotnet restore RaceDay.sln
 
-      - name: Build the solution
+      # RaceDay.sln holds the API, the MVC web app and both test projects.
+      - name: Build the API and the MVC web app
         run: dotnet build RaceDay.sln --no-restore --configuration Release
 
-      - name: Run the unit tests
-        run: dotnet test RaceDay.sln --no-build --configuration Release --logger "trx;LogFileName=test-results.trx"
+      - name: Run the API unit tests
+        run: dotnet test RaceDayApi.Tests --no-build --configuration Release --logger "trx;LogFileName=api-test-results.trx"
+
+      - name: Run the MVC unit tests
+        run: dotnet test RaceDayWeb.Tests --no-build --configuration Release --logger "trx;LogFileName=web-test-results.trx"
 
       - name: Check that the migrations match the model
         run: dotnet ef migrations has-pending-model-changes --project RaceDayApi --startup-project RaceDayApi
@@ -38,3 +53,27 @@ jobs:
         with:
           name: test-results
           path: "**/TestResults/*.trx"
+
+  docker-image:
+    name: Build the MVC Docker image
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Build the image from the Dockerfile
+        run: docker build --tag raceday-web:ci .
+
+      - name: Start the container and check that the web app answers
+        run: |
+          docker run -d -p 8080:8080 --name raceday-web raceday-web:ci
+          # The API is not running in CI, so the home page shows the friendly 503 page.
+          # Any HTTP answer proves the app started inside the container.
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ || true)
+            if [ "$code" != "000" ]; then echo "Web app answered with HTTP $code"; exit 0; fi
+            sleep 1
+          done
+          docker logs raceday-web
+          exit 1
