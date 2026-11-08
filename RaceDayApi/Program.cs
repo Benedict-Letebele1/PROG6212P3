@@ -21,7 +21,7 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(30);
 });
 
-builder.Services.AddScoped<IBannerStorage, LocalBannerStorage>();
+builder.Services.AddScoped<IImageStorage, LocalImageStorage>();
 builder.Services.AddScoped<OrganiserAccess>();
 
 builder.Services.AddControllers();
@@ -56,14 +56,14 @@ if (app.Configuration.GetValue("Database:ApplyMigrationsOnStartup", true))
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Banners are served from their own folder. The upload folder is git-ignored, so a fresh clone may not have it yet.
-// I create it here and point the file provider at it, so it works whether or not it existed at startup.
-var bannerFolder = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads", "banners");
-Directory.CreateDirectory(bannerFolder);
+// Images saved by LocalImageStorage are served from wwwroot/uploads. The folder is git-ignored, so a fresh clone
+// may not have it yet. I create it here and point the file provider at it, so it works either way.
+var uploadFolder = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads");
+Directory.CreateDirectory(uploadFolder);
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(bannerFolder),
-    RequestPath = "/uploads/banners"
+    FileProvider = new PhysicalFileProvider(uploadFolder),
+    RequestPath = "/uploads"
 });
 
 app.UseSession();

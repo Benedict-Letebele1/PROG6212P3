@@ -15,11 +15,9 @@ namespace RaceDayApi.Controllers;
 public class EventsController(
     RaceDayDbContext db,
     OrganiserAccess access,
-    IBannerStorage banners,
+    IImageStorage images,
     IConfiguration configuration) : ControllerBase
 {
-    private static readonly string[] AllowedBannerExtensions = [".jpg", ".jpeg", ".png", ".webp"];
-
     /// <summary>Lists events, optionally filtered by type, date and location.</summary>
     /// <remarks>
     /// Public. type is Run, Walk or Cycle. date is a single day (yyyy-MM-dd). location is a case-insensitive
@@ -264,7 +262,7 @@ public class EventsController(
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ErrorResponse>(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UploadBanner(int eventId, IFormFile file, CancellationToken cancellationToken)
+    public async Task<IActionResult> UploadBanner(int eventId, IFormFile? file, CancellationToken cancellationToken)
     {
         var raceEvent = await access.FindEventAsync(eventId, cancellationToken);
         if (raceEvent is null)
@@ -279,23 +277,13 @@ public class EventsController(
         }
 
         var maxBytes = configuration.GetValue("Uploads:MaxBannerBytes", 5 * 1024 * 1024L);
-        if (file.Length == 0)
+        var uploadError = ImageNames.UploadError(file, maxBytes, "Banner images");
+        if (uploadError is not null)
         {
-            return BadRequest(new ErrorResponse("Choose an image to upload."));
+            return BadRequest(new ErrorResponse(uploadError));
         }
 
-        if (file.Length > maxBytes)
-        {
-            return BadRequest(new ErrorResponse("Banner images must be 5 MB or smaller."));
-        }
-
-        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (!AllowedBannerExtensions.Contains(extension))
-        {
-            return BadRequest(new ErrorResponse("Banner must be a JPG, PNG or WebP image."));
-        }
-
-        var url = await banners.SaveAsync(file, cancellationToken);
+        var url = await images.SaveAsync(file, ImageFolders.Banners, cancellationToken);
         raceEvent.BannerImageURL = url;
         await db.SaveChangesAsync(cancellationToken);
 
