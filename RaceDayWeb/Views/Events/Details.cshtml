@@ -1,0 +1,134 @@
+@model EventDetailsViewModel
+@{
+    var e = Model.Event;
+    ViewData["Title"] = e.Name;
+    var user = Context.Session.CurrentUser();
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <a asp-controller="Home" asp-action="Index" class="text-decoration-none"><i class="bi bi-arrow-left"></i> All events</a>
+</nav>
+
+<div class="rd-detail-banner mb-4" style="@(Model.BannerUrl is null ? "" : $"background-image: url('{Model.BannerUrl}')")">
+    <div class="rd-detail-title">
+        <span class="rd-type-chip @Ui.EventTypeClass(e.EventType)"><i class="bi @Ui.EventTypeIcon(e.EventType)"></i> @e.EventType</span>
+        @if (Model.IsFinished)
+        {
+            <span class="rd-type-chip ms-1" style="background: #555">Finished</span>
+        }
+        <h1>@e.Name</h1>
+        <div class="text-white-50">Organised by @e.OrganisationName</div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="rd-card rd-card-body mb-4">
+            <div class="row g-4">
+                <div class="col-sm-6 rd-fact">
+                    <i class="bi bi-calendar3"></i>
+                    <div><div class="label">Date and start</div><div class="value">@Ui.DateAndTime(e.Date)</div></div>
+                </div>
+                <div class="col-sm-6 rd-fact">
+                    <i class="bi bi-geo-alt"></i>
+                    <div><div class="label">Location</div><div class="value">@e.Location</div></div>
+                </div>
+                <div class="col-sm-6 rd-fact">
+                    <i class="bi bi-signpost-2"></i>
+                    <div><div class="label">Distance</div><div class="value">@Ui.Distance(e.Distance)</div></div>
+                </div>
+                <div class="col-sm-6 rd-fact">
+                    <i class="bi bi-people"></i>
+                    <div><div class="label">Categories</div><div class="value">@e.Categories.Count available</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rd-card rd-card-body">
+            <h2 class="h3">About this event</h2>
+            <p class="mb-0" style="white-space: pre-line">@e.Description</p>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="rd-card rd-card-body">
+            <h2 class="h3">Categories</h2>
+
+            @if (e.Categories.Count == 0)
+            {
+                <p class="text-muted-rd mb-0">The organiser hasn't added categories yet, so entries aren't open.</p>
+            }
+            else if (Model.MyEnrolment is { } mine)
+            {
+                <ul class="list-unstyled mb-4">
+                    @foreach (var c in e.Categories)
+                    {
+                        <li class="d-flex justify-content-between border-bottom py-2">
+                            <span><strong>@c.Name</strong>@if (c.CategoryId == mine.CategoryId) {<span class="text-rd fw-semibold"> &middot; your category</span>}</span>
+                            <span class="text-muted-rd">@Ui.AgeBand(c.MinAge, c.MaxAge)</span>
+                        </li>
+                    }
+                </ul>
+                <div class="p-3 rounded-3" style="background: rgba(255, 90, 38, .07)">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong><i class="bi bi-ticket-perforated text-rd"></i> You're entered</strong>
+                        <partial name="_StatusBadge" model="mine.Status" />
+                    </div>
+                    <div class="small text-muted-rd">Category: @mine.CategoryName &middot; entered @Ui.Date(mine.RegistrationDate)</div>
+                    <a asp-controller="Participant" asp-action="MyEvents" class="small">See all my enrolments</a>
+                </div>
+            }
+            else if (user?.IsParticipant == true && !Model.IsFinished)
+            {
+                <form asp-action="Enrol" asp-route-id="@e.EventId" method="post">
+                    <p class="text-muted-rd small">Choose the category you'll race in. Your age on race day must fit the category.</p>
+                    <div class="d-grid gap-2 mb-3">
+                        @foreach (var c in e.Categories)
+                        {
+                            <label class="rd-category-option">
+                                <input type="radio" name="categoryId" value="@c.CategoryId" required />
+                                <span class="rd-category-box">
+                                    <span>
+                                        <strong>@c.Name</strong>
+                                        @if (!string.IsNullOrWhiteSpace(c.Description))
+                                        {
+                                            <span class="d-block small text-muted-rd">@c.Description</span>
+                                        }
+                                    </span>
+                                    <span class="small fw-semibold">@Ui.AgeBand(c.MinAge, c.MaxAge)</span>
+                                </span>
+                            </label>
+                        }
+                    </div>
+                    <button type="submit" class="btn btn-rd w-100 py-2"><i class="bi bi-flag-fill"></i> Enter event</button>
+                </form>
+            }
+            else
+            {
+                <ul class="list-unstyled mb-3">
+                    @foreach (var c in e.Categories)
+                    {
+                        <li class="d-flex justify-content-between border-bottom py-2">
+                            <span><strong>@c.Name</strong> <span class="d-block small text-muted-rd">@c.Description</span></span>
+                            <span class="text-muted-rd">@Ui.AgeBand(c.MinAge, c.MaxAge)</span>
+                        </li>
+                    }
+                </ul>
+                @if (Model.IsFinished)
+                {
+                    <p class="text-muted-rd mb-0"><i class="bi bi-flag-fill"></i> This event has finished, so entries are closed.</p>
+                }
+                else if (user is null)
+                {
+                    <a class="btn btn-rd w-100" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Url.Action("Details", new { id = e.EventId })">
+                        <i class="bi bi-box-arrow-in-right"></i> Log in as a participant to enter
+                    </a>
+                }
+                else
+                {
+                    <p class="text-muted-rd mb-0"><i class="bi bi-info-circle"></i> Organisers can't enter events. Log in with a participant account to enter.</p>
+                }
+            }
+        </div>
+    </div>
+</div>
