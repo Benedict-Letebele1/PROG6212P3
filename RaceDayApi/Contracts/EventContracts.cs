@@ -39,3 +39,17 @@ public record EventDetailResponse(
 
 /// <summary>The URL of a banner image that was just saved.</summary>
 public record BannerUploadResponse(string ImageUrl);
+
+/// <summary>One of the logged-in organiser's events, with the counts the dashboard shows.</summary>
+public record OrganiserEventResponse(
+    int EventId,
+    string Name,
+    DateTime Date,
+    string Location,
+    decimal Distance,
+    string EventType,
+    string? BannerImageUrl,
+    int CategoryCount,
+    int EnrolmentCount,
+    int ConfirmedCount,
+    int ResultCount);

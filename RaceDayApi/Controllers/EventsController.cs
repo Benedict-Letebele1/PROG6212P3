@@ -78,6 +78,44 @@ public class EventsController(
         return Ok(events);
     }
 
+    /// <summary>Lists the logged-in organiser's own events with category, enrolment and result counts.</summary>
+    /// <remarks>
+    /// Organiser only. Ordered by event date. The MVC dashboard uses this to show every event the organiser
+    /// created, including events that have no enrolments yet.
+    /// </remarks>
+    [HttpGet("mine")]
+    [RequireSession(Role = Roles.Organiser)]
+    [ProducesResponseType<List<OrganiserEventResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetMyEvents(CancellationToken cancellationToken)
+    {
+        var organiser = await access.FindOrganiserAsync(HttpContext.CurrentUserId(), cancellationToken);
+        if (organiser is null)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ErrorResponse("Only organisers have events."));
+        }
+
+        var events = await db.Events.AsNoTracking()
+            .Where(e => e.OrganiserID == organiser.OrganiserID)
+            .OrderBy(e => e.EventDate)
+            .Select(e => new OrganiserEventResponse(
+                e.EventID,
+                e.Name,
+                e.EventDate,
+                e.Location,
+                e.Distance,
+                e.EventType,
+                e.BannerImageURL,
+                e.Categories.Count,
+                e.Enrolments.Count,
+                e.Enrolments.Count(en => en.Status == EnrolmentStatuses.Confirmed),
+                e.Enrolments.Count(en => en.Result != null)))
+            .ToListAsync(cancellationToken);
+
+        return Ok(events);
+    }
+
     /// <summary>Returns one event with its categories.</summary>
     /// <remarks>Public.</remarks>
     [HttpGet("{id:int}")]
