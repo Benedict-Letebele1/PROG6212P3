@@ -1,0 +1,17 @@
+# Keep the Docker build context small and free of build output and secrets.
+**/bin/
+**/obj/
+**/TestResults/
+**/.vs/
+**/*.user
+**/appsettings.Local.json
+**/wwwroot/uploads/
+.git/
+.github/
+docs/
+RaceDayApi/
+RaceDayApi.Tests/
+RaceDayWeb.Tests/
+*.md
+Dockerfile
+.dockerignore
