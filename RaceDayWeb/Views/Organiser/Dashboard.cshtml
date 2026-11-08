@@ -1,0 +1,137 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    var user = Context.Session.CurrentUser();
+}
+
+<div class="rd-page-header">
+    <div>
+        <div class="rd-kicker">@user?.OrganisationName</div>
+        <h1>Organiser dashboard</h1>
+    </div>
+    <a asp-controller="ManageEvents" asp-action="Create" class="btn btn-rd"><i class="bi bi-plus-lg"></i> Create event</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="rd-card rd-stat">
+            <div class="rd-stat-icon orange"><i class="bi bi-calendar-event"></i></div>
+            <div><div class="value">@Model.Events.Count</div><div class="label">Events created</div></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="rd-card rd-stat">
+            <div class="rd-stat-icon lane"><i class="bi bi-hourglass-top"></i></div>
+            <div><div class="value">@Model.Upcoming.Count</div><div class="label">Upcoming events</div></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="rd-card rd-stat">
+            <div class="rd-stat-icon"><i class="bi bi-people"></i></div>
+            <div><div class="value">@Model.TotalEnrolments</div><div class="label">Total enrolments (@Model.TotalConfirmed confirmed)</div></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="rd-card rd-stat">
+            <div class="rd-stat-icon green"><i class="bi bi-stopwatch"></i></div>
+            <div><div class="value">@Model.TotalResults</div><div class="label">Results captured</div></div>
+        </div>
+    </div>
+</div>
+
+@if (Model.Events.Count == 0)
+{
+    <div class="rd-card">
+        <div class="rd-empty-state">
+            <i class="bi bi-calendar-plus"></i>
+            <h2>Create your first event</h2>
+            <p>Add the event details and a banner, then add categories so participants can enter.</p>
+            <a asp-controller="ManageEvents" asp-action="Create" class="btn btn-rd">Create event</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="rd-card rd-card-body h-100">
+                <h2 class="h3">Next up</h2>
+                @if (Model.NextEvent is { } next)
+                {
+                    <div class="rd-countdown mb-1">@Ui.Countdown(next.Date, Model.Now)</div>
+                    <h3 class="h4 mb-1">@next.Name</h3>
+                    <div class="rd-meta mb-3">
+                        <span><i class="bi bi-calendar3"></i> @Ui.DateAndTime(next.Date)</span>
+                        <span><i class="bi bi-geo-alt"></i> @next.Location</span>
+                    </div>
+                    <p class="mb-3"><strong>@next.EnrolmentCount</strong> enrolled &middot; <strong>@next.ConfirmedCount</strong> confirmed</p>
+                    <a asp-controller="EventEnrolments" asp-action="Index" asp-route-eventId="@next.EventId" class="btn btn-rd-dark btn-sm">View enrolments</a>
+                    @if (Model.Upcoming.Count > 1)
+                    {
+                        <h3 class="h6 mt-4 mb-2 text-uppercase text-muted-rd">Also coming up</h3>
+                        <ul class="list-unstyled mb-0">
+                            @foreach (var e in Model.Upcoming.Skip(1).Take(4))
+                            {
+                                <li class="d-flex justify-content-between py-1 border-bottom">
+                                    <span>@e.Name</span><span class="text-muted-rd small">@Ui.Date(e.Date)</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted-rd">No upcoming events. Create one to open entries.</p>
+                }
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="rd-card overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table rd-table">
+                        <thead>
+                            <tr>
+                                <th>Event</th>
+                                <th>Date</th>
+                                <th style="min-width: 160px">Enrolments</th>
+                                <th>Results</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var e in Model.Events.OrderBy(e => e.Date < Model.Now).ThenBy(e => e.Date))
+                            {
+                                var width = Model.MaxEnrolments == 0 ? 0 : e.EnrolmentCount * 100 / Model.MaxEnrolments;
+                                <tr>
+                                    <td>
+                                        <span class="rd-type-chip @Ui.EventTypeClass(e.EventType) me-1"><i class="bi @Ui.EventTypeIcon(e.EventType)"></i></span>
+                                        <span class="fw-semibold">@e.Name</span>
+                                        <div class="small text-muted-rd">@e.CategoryCount categor@(e.CategoryCount == 1 ? "y" : "ies")</div>
+                                    </td>
+                                    <td>
+                                        @Ui.Date(e.Date)
+                                        <div class="rd-countdown">@Ui.Countdown(e.Date, Model.Now)</div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <strong>@e.EnrolmentCount</strong>
+                                            <div class="progress flex-fill" style="height: 8px" role="progressbar" aria-label="Enrolments for @e.Name" aria-valuenow="@e.EnrolmentCount" aria-valuemin="0" aria-valuemax="@Model.MaxEnrolments">
+                                                <div class="progress-bar" style="width: @width%; background: var(--rd-orange)"></div>
+                                            </div>
+                                        </div>
+                                        <div class="small text-muted-rd">@e.ConfirmedCount confirmed</div>
+                                    </td>
+                                    <td>@e.ResultCount</td>
+                                    <td class="text-end">
+                                        <a asp-controller="EventEnrolments" asp-action="Index" asp-route-eventId="@e.EventId" class="btn btn-sm btn-rd-outline">Manage</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+}
