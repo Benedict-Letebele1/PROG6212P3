@@ -1,0 +1,116 @@
+@model CategoriesPageViewModel
+@{
+    ViewData["Title"] = $"Categories - {Model.Event.Name}";
+    var eventId = Model.Event.EventId;
+}
+
+<partial name="_OrganiserEventTabs" model="@("Categories")" />
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="rd-card overflow-hidden">
+            @if (Model.Event.Categories.Count == 0)
+            {
+                <div class="rd-empty-state py-4">
+                    <i class="bi bi-tags"></i>
+                    <h2 class="h3">No categories yet</h2>
+                    <p>Participants can only enter once there is at least one category, for example "Under 20", "Senior" or "10 km".</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table rd-table">
+                        <thead>
+                            <tr><th>Category</th><th>Ages</th><th class="text-end">Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model.Event.Categories)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@c.Name</strong>
+                                        @if (!string.IsNullOrWhiteSpace(c.Description)) { <div class="small text-muted-rd">@c.Description</div> }
+                                    </td>
+                                    <td>@Ui.AgeBand(c.MinAge, c.MaxAge)</td>
+                                    <td class="text-end text-nowrap">
+                                        <button class="btn btn-sm btn-rd-outline" type="button" data-bs-toggle="collapse" data-bs-target="#edit-@c.CategoryId" aria-expanded="false" aria-controls="edit-@c.CategoryId">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </button>
+                                        <form asp-action="Delete" asp-route-eventId="@eventId" method="post" class="d-inline" data-confirm="Delete the @c.Name category?">
+                                            <input type="hidden" name="categoryId" value="@c.CategoryId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="Delete @c.Name"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <tr class="collapse" id="edit-@c.CategoryId">
+                                    <td colspan="3" style="background: #faf9f6">
+                                        <form asp-action="Update" asp-route-eventId="@eventId" method="post" class="row g-2 align-items-end">
+                                            <input type="hidden" name="CategoryId" value="@c.CategoryId" />
+                                            <div class="col-md-4">
+                                                <label class="form-label small" for="name-@c.CategoryId">Name</label>
+                                                <input class="form-control form-control-sm" id="name-@c.CategoryId" name="Name" value="@c.Name" required maxlength="50" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small" for="desc-@c.CategoryId">Description</label>
+                                                <input class="form-control form-control-sm" id="desc-@c.CategoryId" name="Description" value="@c.Description" maxlength="200" />
+                                            </div>
+                                            <div class="col-6 col-md-1">
+                                                <label class="form-label small" for="min-@c.CategoryId">Min</label>
+                                                <input class="form-control form-control-sm" id="min-@c.CategoryId" name="MinAge" type="number" min="0" max="120" value="@c.MinAge" />
+                                            </div>
+                                            <div class="col-6 col-md-1">
+                                                <label class="form-label small" for="max-@c.CategoryId">Max</label>
+                                                <input class="form-control form-control-sm" id="max-@c.CategoryId" name="MaxAge" type="number" min="0" max="120" value="@c.MaxAge" />
+                                            </div>
+                                            <div class="col-md-2 d-grid">
+                                                <button type="submit" class="btn btn-sm btn-rd">Save</button>
+                                            </div>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="rd-card rd-card-body">
+            <h2 class="h4">Add a category</h2>
+            <form asp-action="Add" asp-route-eventId="@eventId" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger rd-alert"></div>
+                <div class="mb-3">
+                    <label asp-for="NewCategory.Name" class="form-label"></label>
+                    <input asp-for="NewCategory.Name" class="form-control" placeholder="e.g. Senior" />
+                    <span asp-validation-for="NewCategory.Name"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="NewCategory.Description" class="form-label"></label>
+                    <input asp-for="NewCategory.Description" class="form-control" placeholder="e.g. Ages 20 to 39" />
+                    <span asp-validation-for="NewCategory.Description"></span>
+                </div>
+                <div class="row g-3 mb-2">
+                    <div class="col-6">
+                        <label asp-for="NewCategory.MinAge" class="form-label"></label>
+                        <input asp-for="NewCategory.MinAge" type="number" min="0" max="120" class="form-control" />
+                        <span asp-validation-for="NewCategory.MinAge"></span>
+                    </div>
+                    <div class="col-6">
+                        <label asp-for="NewCategory.MaxAge" class="form-label"></label>
+                        <input asp-for="NewCategory.MaxAge" type="number" min="0" max="120" class="form-control" />
+                        <span asp-validation-for="NewCategory.MaxAge"></span>
+                    </div>
+                </div>
+                <p class="form-text">Leave both ages empty for "All ages", or leave the maximum empty for an open band such as 50+. For a distance category, put the distance in the name.</p>
+                <button type="submit" class="btn btn-rd w-100"><i class="bi bi-plus-lg"></i> Add category</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
