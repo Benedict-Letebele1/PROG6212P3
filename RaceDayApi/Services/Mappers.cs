@@ -37,7 +37,7 @@ public static class Mappers
             enrolment.Status,
             enrolment.RegistrationDate);
 
-    public static ResultResponse ToResult(RaceResult result) =>
+    public static ResultResponse ToResult(RaceResult result, int totalFinishers) =>
         new(
             result.ResultID,
             result.EnrolmentID,
@@ -48,5 +48,6 @@ public static class Mappers
             result.Enrolment.Participant.User.FullName,
             result.FinishTime.ToString("HH:mm:ss"),
             result.FinishPosition,
-            result.Status);
+            result.Status,
+            totalFinishers);
 }

@@ -31,6 +31,30 @@ public class ResultTests(RaceDayApiFactory factory) : IClassFixture<RaceDayApiFa
     }
 
     [Fact]
+    public async Task Results_IncludeTheNumberOfFinishersInTheEvent()
+    {
+        var organiser = await ApiTestHelpers.OrganiserClientAsync(factory);
+        var eventId = await ApiTestHelpers.CreateEventAsync(organiser);
+        var categoryId = await ApiTestHelpers.CreateCategoryAsync(organiser, eventId);
+        var first = await ApiTestHelpers.ParticipantClientAsync(factory);
+        var second = await ApiTestHelpers.ParticipantClientAsync(factory);
+        var firstEnrolment = await ApiTestHelpers.ReadAsync<EnrolmentResponse>(
+            await first.PostAsJsonAsync($"/api/events/{eventId}/enrol", new EnrolRequest(categoryId)));
+        var secondEnrolment = await ApiTestHelpers.ReadAsync<EnrolmentResponse>(
+            await second.PostAsJsonAsync($"/api/events/{eventId}/enrol", new EnrolRequest(categoryId)));
+        (await organiser.PostAsJsonAsync($"/api/events/{eventId}/results", new ResultRequest(firstEnrolment!.EnrolmentId, "01:10:00", 1))).EnsureSuccessStatusCode();
+        (await organiser.PostAsJsonAsync($"/api/events/{eventId}/results", new ResultRequest(secondEnrolment!.EnrolmentId, "01:20:00", 2))).EnsureSuccessStatusCode();
+
+        var mine = await ApiTestHelpers.ReadAsync<List<ResultResponse>>(await second.GetAsync("/api/results/me"));
+        var eventResults = await ApiTestHelpers.ReadAsync<List<ResultResponse>>(await organiser.GetAsync($"/api/events/{eventId}/results"));
+
+        var result = Assert.Single(mine!);
+        Assert.Equal(2, result.FinishPosition);
+        Assert.Equal(2, result.TotalFinishers);
+        Assert.All(eventResults!, r => Assert.Equal(2, r.TotalFinishers));
+    }
+
+    [Fact]
     public async Task Organiser_CapturesASecondResultForTheSameEnrolment_Returns400()
     {
         var organiser = await ApiTestHelpers.OrganiserClientAsync(factory);

@@ -34,7 +34,8 @@ public class ResultsController(RaceDayDbContext db, OrganiserAccess access) : Co
             .OrderByDescending(r => r.Enrolment.Event.EventDate)
             .ToListAsync(cancellationToken);
 
-        return Ok(results.Select(Mappers.ToResult).ToList());
+        var finishers = await FinisherCountsAsync(results.Select(r => r.Enrolment.EventID), cancellationToken);
+        return Ok(results.Select(r => Mappers.ToResult(r, finishers[r.Enrolment.EventID])).ToList());
     }
 
     /// <summary>Lists the results for an event the logged-in organiser owns, by finishing position.</summary>
@@ -64,7 +65,7 @@ public class ResultsController(RaceDayDbContext db, OrganiserAccess access) : Co
             .OrderBy(r => r.FinishPosition)
             .ToListAsync(cancellationToken);
 
-        return Ok(results.Select(Mappers.ToResult).ToList());
+        return Ok(results.Select(r => Mappers.ToResult(r, results.Count)).ToList());
     }
 
     /// <summary>Records the finish time and position for one enrolment in an event the logged-in organiser owns.</summary>
@@ -129,7 +130,8 @@ public class ResultsController(RaceDayDbContext db, OrganiserAccess access) : Co
         db.Results.Add(result);
         await db.SaveChangesAsync(cancellationToken);
 
-        return StatusCode(StatusCodes.Status201Created, Mappers.ToResult(result));
+        var finishers = await FinisherCountsAsync([eventId], cancellationToken);
+        return StatusCode(StatusCodes.Status201Created, Mappers.ToResult(result, finishers[eventId]));
     }
 
     /// <summary>Changes the finish time or position of a result in an event the logged-in organiser owns.</summary>
@@ -169,7 +171,26 @@ public class ResultsController(RaceDayDbContext db, OrganiserAccess access) : Co
         result.FinishPosition = request.FinishPosition;
         await db.SaveChangesAsync(cancellationToken);
 
-        return Ok(Mappers.ToResult(result));
+        var eventFinishers = await FinisherCountsAsync([result.Enrolment.EventID], cancellationToken);
+        return Ok(Mappers.ToResult(result, eventFinishers[result.Enrolment.EventID]));
+    }
+
+    /// <summary>Counts the recorded results per event, so each result can say how many people finished.</summary>
+    private async Task<Dictionary<int, int>> FinisherCountsAsync(IEnumerable<int> eventIds, CancellationToken cancellationToken)
+    {
+        var ids = eventIds.Distinct().ToList();
+        var counts = await db.Results.AsNoTracking()
+            .Where(r => ids.Contains(r.Enrolment.EventID))
+            .GroupBy(r => r.Enrolment.EventID)
+            .Select(g => new { EventId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.EventId, x => x.Count, cancellationToken);
+
+        foreach (var id in ids)
+        {
+            counts.TryAdd(id, 0);
+        }
+
+        return counts;
     }
 
     /// <summary>Accepts HH:mm:ss (or H:mm:ss). A finish time of 00:00:00 is rejected.</summary>
