@@ -27,11 +27,11 @@ public class OrganiserDashboardTests(RaceDayApiFactory factory) : IClassFixture<
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var events = await ApiTestHelpers.ReadAsync<List<OrganiserEventResponse>>(response);
         Assert.Equal(["Jarred Busy Run", "Jarred Quiet Run"], events!.Select(e => e.Name));
-        var busy = events.Single(e => e.EventId == busyEventId);
+        var busy = events!.Single(e => e.EventId == busyEventId);
         Assert.Equal(1, busy.CategoryCount);
         Assert.Equal(1, busy.EnrolmentCount);
         Assert.Equal(0, busy.ResultCount);
-        Assert.Equal(0, events.Single(e => e.Name == "Jarred Quiet Run").EnrolmentCount);
+        Assert.Equal(0, events!.Single(e => e.Name == "Jarred Quiet Run").EnrolmentCount);
     }
 
     [Fact]

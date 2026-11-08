@@ -12,7 +12,7 @@ namespace RaceDayApi.Controllers;
 [ApiController]
 [Route("api/users")]
 [Produces("application/json")]
-public class UsersController(RaceDayDbContext db) : ControllerBase
+public class UsersController(RaceDayDbContext db, IImageStorage images, IConfiguration configuration) : ControllerBase
 {
     /// <summary>Returns the logged-in user's profile.</summary>
     /// <remarks>
@@ -99,6 +99,43 @@ public class UsersController(RaceDayDbContext db) : ControllerBase
         await db.SaveChangesAsync(cancellationToken);
 
         return Ok(ToProfile(user));
+    }
+
+    /// <summary>Uploads a profile picture for the logged-in participant.</summary>
+    /// <remarks>
+    /// Participant only, because the ProfilePictureURL column belongs to the Participants table. Accepts JPG,
+    /// PNG or WebP files up to 2 MB by default. The image goes to Azure Blob Storage when it is configured, and
+    /// the saved URL is stored on the profile and returned.
+    /// </remarks>
+    [HttpPost("profile/picture")]
+    [RequireSession(Role = Roles.Participant)]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType<ProfilePictureResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ErrorResponse>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UploadProfilePicture(IFormFile? file, CancellationToken cancellationToken)
+    {
+        var user = await LoadCurrentUserAsync(cancellationToken);
+        if (user?.Participant is null)
+        {
+            return NotFound(new ErrorResponse("This account no longer exists."));
+        }
+
+        var maxBytes = configuration.GetValue("Uploads:MaxProfilePictureBytes", 2 * 1024 * 1024L);
+        var uploadError = ImageNames.UploadError(file, maxBytes, "Profile pictures");
+        if (uploadError is not null)
+        {
+            return BadRequest(new ErrorResponse(uploadError));
+        }
+
+        // UploadError returned null, so the file is present.
+        var url = await images.SaveAsync(file!, ImageFolders.ProfilePictures, cancellationToken);
+        user.Participant.ProfilePictureURL = url;
+        await db.SaveChangesAsync(cancellationToken);
+
+        return Ok(new ProfilePictureResponse(url));
     }
 
     private Task<AppUser?> LoadCurrentUserAsync(CancellationToken cancellationToken)

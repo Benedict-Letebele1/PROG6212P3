@@ -21,3 +21,6 @@ public record UpdateProfileRequest(
     string? OrganisationName,
     string? ContactNumber,
     DateOnly? DateOfBirth);
+
+/// <summary>The URL of a profile picture that was just saved.</summary>
+public record ProfilePictureResponse(string ImageUrl);
