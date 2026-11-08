@@ -1,8 +1,101 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model EventListViewModel
+@{
+    ViewData["Title"] = "Events";
+    var user = Context.Session.CurrentUser();
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+@section Hero {
+    <section class="rd-hero">
+        <div class="container position-relative" style="z-index: 1">
+            <p class="text-uppercase fw-semibold mb-2" style="letter-spacing: .1em; color: #ffb199">Run &middot; Walk &middot; Cycle</p>
+            <h1>Find your next<br /><span class="text-rd">start line</span></h1>
+            <p class="lead mt-3">
+                Road races, community walks and cycle tours across South Africa.
+                @(user?.IsParticipant == true ? "Pick an event, choose your category and you're in." : "Browse the events below.")
+            </p>
+            @if (user is null)
+            {
+                <a class="btn btn-rd btn-lg mt-2" asp-controller="Account" asp-action="Register"><i class="bi bi-flag"></i> Join RaceDay</a>
+            }
+        </div>
+    </section>
+}
+
+<form method="get" asp-action="Index" class="rd-card rd-filter-bar mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label for="type" class="form-label">Event type</label>
+            <select id="type" name="type" class="form-select">
+                <option value="">All types</option>
+                @foreach (var type in EventTypes.All)
+                {
+                    <option value="@type" selected="@(string.Equals(Model.Type, type, StringComparison.OrdinalIgnoreCase))">@type</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="date" class="form-label">Date</label>
+            <input id="date" name="date" type="date" class="form-control" value="@Model.Date?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label for="location" class="form-label">Location</label>
+            <input id="location" name="location" class="form-control" placeholder="e.g. Cape Town" value="@Model.Location" maxlength="100" />
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-rd flex-fill"><i class="bi bi-funnel"></i> Filter</button>
+            @if (Model.IsFiltered)
+            {
+                <a asp-action="Index" class="btn btn-rd-outline">Clear</a>
+            }
+        </div>
+    </div>
+    @if (Model.FilterError is not null)
+    {
+        <p class="text-danger mb-0 mt-2"><i class="bi bi-exclamation-circle"></i> @Model.FilterError</p>
+    }
+</form>
+
+<div class="rd-page-header">
+    <div>
+        <div class="rd-kicker">@(Model.IsFiltered ? "Filtered results" : "On the calendar")</div>
+        <h2 class="mb-0">Upcoming events</h2>
+    </div>
+    <span class="text-muted-rd">@Model.Upcoming.Count event@(Model.Upcoming.Count == 1 ? "" : "s")</span>
 </div>
+
+@if (Model.Upcoming.Count == 0)
+{
+    <div class="rd-card mb-5">
+        <div class="rd-empty-state py-4">
+            <i class="bi bi-calendar-x"></i>
+            <h3>No upcoming events found</h3>
+            <p>@(Model.IsFiltered ? "Try a different type, date or location." : "New events are added by organisers all the time. Check back soon.")</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-4 mb-5">
+        @foreach (var item in Model.Upcoming)
+        {
+            <div class="col-md-6 col-lg-4"><partial name="_EventCard" model="item" /></div>
+        }
+    </div>
+}
+
+@if (Model.Finished.Count > 0)
+{
+    <div class="rd-page-header">
+        <div>
+            <div class="rd-kicker">Already run</div>
+            <h2 class="mb-0">Finished events</h2>
+        </div>
+        <span class="text-muted-rd">@Model.Finished.Count event@(Model.Finished.Count == 1 ? "" : "s")</span>
+    </div>
+    <div class="row g-4">
+        @foreach (var item in Model.Finished)
+        {
+            <div class="col-md-6 col-lg-4"><partial name="_EventCard" model="item" /></div>
+        }
+    </div>
+}

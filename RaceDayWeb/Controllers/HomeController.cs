@@ -1,13 +1,35 @@
 using Microsoft.AspNetCore.Mvc;
+using RaceDayWeb.Models;
+using RaceDayWeb.Services;
 
 namespace RaceDayWeb.Controllers;
 
-/// <summary>The home page and the friendly error pages.</summary>
-public class HomeController : Controller
+/// <summary>The home page with all events and the friendly error pages.</summary>
+public class HomeController(RaceDayApiClient api) : Controller
 {
-    public IActionResult Index()
+    /// <summary>Lists events, filtered by type, date and location through GET /api/events.</summary>
+    public async Task<IActionResult> Index(string? type, DateOnly? date, string? location, CancellationToken ct)
     {
-        return View();
+        var model = new EventListViewModel { Type = type, Date = date, Location = location };
+
+        List<EventSummaryResponse> events;
+        try
+        {
+            events = await api.GetEventsAsync(type, date, location, ct);
+        }
+        catch (ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            // An unknown type in the URL, for example. Show the message and all events instead.
+            model.FilterError = ex.Message;
+            model.Type = null;
+            events = await api.GetEventsAsync(null, date, location, ct);
+        }
+
+        // The API returns events by date. Upcoming events are shown first, soonest first.
+        var now = DateTime.Now;
+        model.Upcoming = events.Where(e => e.Date >= now).ToList();
+        model.Finished = events.Where(e => e.Date < now).OrderByDescending(e => e.Date).ToList();
+        return View(model);
     }
 
     /// <summary>Shown by the exception handler outside Development, so no stack trace reaches the user.</summary>

@@ -1,0 +1,36 @@
+@model EventSummaryResponse
+@inject ImageUrls Images
+@{
+    var banner = Images.Resolve(Model.BannerImageUrl);
+}
+<article class="rd-card rd-event-card">
+    <a asp-controller="Events" asp-action="Details" asp-route-id="@Model.EventId" class="text-decoration-none">
+        @if (banner is not null)
+        {
+            <div class="rd-event-banner" style="background-image: url('@banner')" role="img" aria-label="@Model.Name banner">
+                <span class="rd-type-chip @Ui.EventTypeClass(Model.EventType)"><i class="bi @Ui.EventTypeIcon(Model.EventType)"></i> @Model.EventType</span>
+                <span class="rd-event-date"><span class="day">@Model.Date.Day</span><span class="month">@Model.Date.ToString("MMM")</span></span>
+            </div>
+        }
+        else
+        {
+            <div class="rd-event-banner rd-banner-fallback">
+                <i class="bi @Ui.EventTypeIcon(Model.EventType)"></i>
+                <span class="rd-type-chip @Ui.EventTypeClass(Model.EventType)"><i class="bi @Ui.EventTypeIcon(Model.EventType)"></i> @Model.EventType</span>
+                <span class="rd-event-date"><span class="day">@Model.Date.Day</span><span class="month">@Model.Date.ToString("MMM")</span></span>
+            </div>
+        }
+    </a>
+    <div class="card-body">
+        <h3><a asp-controller="Events" asp-action="Details" asp-route-id="@Model.EventId" class="text-reset text-decoration-none">@Model.Name</a></h3>
+        <p class="small text-muted-rd mb-2">by @Model.OrganisationName</p>
+        <div class="rd-meta mb-3">
+            <span><i class="bi bi-calendar3"></i> @Ui.DateAndTime(Model.Date)</span>
+            <span><i class="bi bi-geo-alt"></i> @Model.Location</span>
+            <span><i class="bi bi-signpost"></i> @Ui.Distance(Model.Distance)</span>
+        </div>
+        <a asp-controller="Events" asp-action="Details" asp-route-id="@Model.EventId" class="btn btn-rd-outline btn-sm mt-auto align-self-start">
+            View event <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+</article>
