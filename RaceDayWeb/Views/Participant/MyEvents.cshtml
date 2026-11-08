@@ -1,0 +1,74 @@
+@model List<EnrolmentResponse>
+@{
+    ViewData["Title"] = "My enrolments";
+    var now = DateTime.Now;
+    var upcoming = Model.Where(e => e.EventDate >= now).ToList();
+    var past = Model.Where(e => e.EventDate < now).ToList();
+}
+
+<div class="rd-page-header">
+    <div>
+        <div class="rd-kicker">Participant</div>
+        <h1>My enrolments</h1>
+    </div>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-rd"><i class="bi bi-search"></i> Find another event</a>
+</div>
+
+<div class="d-flex flex-wrap gap-3 mb-4 small">
+    <span><partial name="_StatusBadge" model="@EnrolmentStatuses.Confirmed" /> The organiser confirmed your place</span>
+    <span><partial name="_StatusBadge" model="@EnrolmentStatuses.Pending" /> Waiting for the organiser</span>
+    <span><partial name="_StatusBadge" model="@EnrolmentStatuses.Cancelled" /> This entry was cancelled</span>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="rd-card">
+        <div class="rd-empty-state">
+            <i class="bi bi-ticket-perforated"></i>
+            <h2>No entries yet</h2>
+            <p>Find an event you like, choose your category and enter. It will show up here.</p>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-rd">Browse events</a>
+        </div>
+    </div>
+}
+else
+{
+    foreach (var (title, list) in new[] { ("Coming up", upcoming), ("Past events", past) })
+    {
+        if (list.Count == 0) { continue; }
+        <h2 class="h3 mt-2">@title</h2>
+        <div class="rd-card mb-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table rd-table">
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Entered</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var e in list)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-controller="Events" asp-action="Details" asp-route-id="@e.EventId" class="fw-semibold">@e.EventName</a>
+                                    @if (e.EventDate >= now)
+                                    {
+                                        <div class="rd-countdown">@Ui.Countdown(e.EventDate, now)</div>
+                                    }
+                                </td>
+                                <td>@Ui.DateAndTime(e.EventDate)</td>
+                                <td>@e.CategoryName</td>
+                                <td class="text-muted-rd">@Ui.Date(e.RegistrationDate)</td>
+                                <td><partial name="_StatusBadge" model="e.Status" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+}
