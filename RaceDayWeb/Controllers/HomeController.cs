@@ -1,9 +1,8 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using RaceDayWeb.Models;
 
 namespace RaceDayWeb.Controllers;
 
+/// <summary>The home page and the friendly error pages.</summary>
 public class HomeController : Controller
 {
     public IActionResult Index()
@@ -11,14 +10,18 @@ public class HomeController : Controller
         return View();
     }
 
-    public IActionResult Privacy()
+    /// <summary>Shown by the exception handler outside Development, so no stack trace reaches the user.</summary>
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
     {
         return View();
     }
 
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
+    /// <summary>Shown for status codes such as 404 when a URL does not match any page.</summary>
+    [Route("Home/Status/{code:int}")]
+    public IActionResult Status(int code)
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        Response.StatusCode = code;
+        return View(code == StatusCodes.Status404NotFound ? "NotFound" : "Error");
     }
 }

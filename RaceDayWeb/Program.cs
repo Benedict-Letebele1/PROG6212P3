@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using RaceDayWeb.Infrastructure;
 using RaceDayWeb.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,7 +31,8 @@ builder.Services.AddHttpClient<RaceDayApiClient>((services, client) =>
     .AddHttpMessageHandler<ApiSessionHandler>();
 builder.Services.AddSingleton<ImageUrls>();
 
-builder.Services.AddControllersWithViews();
+// ApiErrorFilter turns API failures into friendly pages instead of raw errors.
+builder.Services.AddControllersWithViews(options => options.Filters.Add<ApiErrorFilter>());
 
 var app = builder.Build();
 
@@ -38,6 +40,9 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
 }
+
+// A URL that matches no page shows the friendly Not Found page instead of a blank 404.
+app.UseStatusCodePagesWithReExecute("/Home/Status/{0}");
 
 app.UseRouting();
 app.UseSession();

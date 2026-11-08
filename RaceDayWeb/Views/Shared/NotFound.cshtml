@@ -1,0 +1,10 @@
+@{
+    ViewData["Title"] = "Not found";
+    var message = ViewData["Message"] as string;
+}
+<section class="rd-empty-state">
+    <i class="bi bi-signpost-split"></i>
+    <h1>Wrong turn</h1>
+    <p>@(message ?? "We couldn't find the page you were looking for.")</p>
+    <a class="btn btn-rd" asp-controller="Home" asp-action="Index">Back to events</a>
+</section>
