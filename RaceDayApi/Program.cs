@@ -1,4 +1,5 @@
 using System.Reflection;
+using Azure.Storage.Blobs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi;
@@ -6,6 +7,9 @@ using RaceDayApi.Data;
 using RaceDayApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Local secrets (such as the Azure storage connection string) can live in this git-ignored file.
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
 builder.Services.AddDbContext<RaceDayDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("RaceDayDb")));
@@ -21,7 +25,19 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(30);
 });
 
-builder.Services.AddScoped<IImageStorage, LocalImageStorage>();
+// Images go to Azure Blob Storage when a connection string is set (user-secrets, an environment variable or
+// appsettings.Local.json). Without one, the API keeps them on its own disk, so it still runs on any machine.
+var blobConnectionString = builder.Configuration["AzureStorage:ConnectionString"];
+if (!string.IsNullOrWhiteSpace(blobConnectionString))
+{
+    var containerName = builder.Configuration["AzureStorage:ContainerName"] ?? "raceday-images";
+    builder.Services.AddSingleton(new BlobContainerClient(blobConnectionString, containerName));
+    builder.Services.AddScoped<IImageStorage, AzureBlobImageStorage>();
+}
+else
+{
+    builder.Services.AddScoped<IImageStorage, LocalImageStorage>();
+}
 builder.Services.AddScoped<OrganiserAccess>();
 
 builder.Services.AddControllers();

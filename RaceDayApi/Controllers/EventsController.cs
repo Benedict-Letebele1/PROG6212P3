@@ -283,7 +283,8 @@ public class EventsController(
             return BadRequest(new ErrorResponse(uploadError));
         }
 
-        var url = await images.SaveAsync(file, ImageFolders.Banners, cancellationToken);
+        // UploadError returned null, so the file is present.
+        var url = await images.SaveAsync(file!, ImageFolders.Banners, cancellationToken);
         raceEvent.BannerImageURL = url;
         await db.SaveChangesAsync(cancellationToken);
 
