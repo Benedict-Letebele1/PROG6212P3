@@ -1,0 +1,20 @@
+@{
+    ViewData["Title"] = "Access denied";
+    var user = Context.Session.CurrentUser();
+}
+<section class="rd-empty-state">
+    <i class="bi bi-sign-stop"></i>
+    <h1>Not your lane</h1>
+    <p>
+        That page is for @(user?.IsOrganiser == true ? "participants" : "organisers") only.
+        You're logged in as @(user?.IsOrganiser == true ? "an organiser" : "a participant").
+    </p>
+    @if (user?.IsOrganiser == true)
+    {
+        <a class="btn btn-rd" asp-controller="Organiser" asp-action="Dashboard">Go to my dashboard</a>
+    }
+    else
+    {
+        <a class="btn btn-rd" asp-controller="Home" asp-action="Index">Browse events</a>
+    }
+</section>

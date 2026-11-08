@@ -1,0 +1,96 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Join RaceDay";
+}
+<div class="rd-auth" style="max-width: 600px">
+    <div class="rd-card">
+        <div class="rd-card-body">
+            <p class="rd-kicker text-rd fw-semibold text-uppercase mb-1">Get on the start line</p>
+            <h1>Join RaceDay</h1>
+
+            <form asp-action="Register" method="post" novalidate data-role-fields>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger rd-alert"></div>
+
+                <fieldset class="mb-4">
+                    <legend class="form-label">I want to</legend>
+                    <div class="rd-role-choice">
+                        <label>
+                            <input type="radio" asp-for="Role" value="@Roles.Participant" />
+                            <span class="rd-role-card">
+                                <i class="bi bi-person-running"></i>
+                                <strong>Participate</strong>
+                                <small>Enter events and track my results</small>
+                            </span>
+                        </label>
+                        <label>
+                            <input type="radio" asp-for="Role" value="@Roles.Organiser" />
+                            <span class="rd-role-card">
+                                <i class="bi bi-megaphone"></i>
+                                <strong>Organise</strong>
+                                <small>Create events and capture results</small>
+                            </span>
+                        </label>
+                    </div>
+                    <span asp-validation-for="Role"></span>
+                </fieldset>
+
+                <div class="mb-3">
+                    <label asp-for="FullName" class="form-label"></label>
+                    <input asp-for="FullName" class="form-control" autocomplete="name" />
+                    <span asp-validation-for="FullName"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" autocomplete="email" />
+                    <span asp-validation-for="Email"></span>
+                </div>
+
+                <div data-for-role="@Roles.Participant">
+                    <div class="mb-3">
+                        <label asp-for="DateOfBirth" class="form-label"></label>
+                        <input asp-for="DateOfBirth" type="date" class="form-control" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        <div class="form-text">Used to check you're in the right age category when you enter an event.</div>
+                        <span asp-validation-for="DateOfBirth"></span>
+                    </div>
+                </div>
+
+                <div data-for-role="@Roles.Organiser">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-7">
+                            <label asp-for="OrganisationName" class="form-label"></label>
+                            <input asp-for="OrganisationName" class="form-control" autocomplete="organization" />
+                            <span asp-validation-for="OrganisationName"></span>
+                        </div>
+                        <div class="col-md-5">
+                            <label asp-for="ContactNumber" class="form-label"></label>
+                            <input asp-for="ContactNumber" class="form-control" autocomplete="tel" placeholder="+27 11 555 0101" />
+                            <span asp-validation-for="ContactNumber"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label asp-for="Password" class="form-label"></label>
+                        <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                        <div class="form-text">At least 8 characters.</div>
+                        <span asp-validation-for="Password"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="ConfirmPassword" class="form-label"></label>
+                        <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                        <span asp-validation-for="ConfirmPassword"></span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-rd w-100 py-2"><i class="bi bi-flag"></i> Create my account</button>
+            </form>
+
+            <p class="text-center mt-4 mb-0">Already registered? <a asp-action="Login">Log in</a></p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

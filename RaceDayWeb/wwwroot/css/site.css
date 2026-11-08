@@ -372,3 +372,6 @@ a:hover { color: var(--rd-orange); }
 .rd-alert i { margin-right: .35rem; }
 
 .rd-countdown { font-size: .8rem; font-weight: 700; color: var(--rd-lane); text-transform: uppercase; letter-spacing: .05em; }
+
+/* An empty validation summary takes no space. */
+.validation-summary-valid { display: none; }
