@@ -66,6 +66,7 @@ if (app.Configuration.GetValue("Database:ApplyMigrationsOnStartup", true))
     if (app.Configuration.GetValue("Database:SeedDemoData", true))
     {
         await DemoDataSeeder.SeedAsync(db);
+        await UpcomingEventsSeeder.SeedAsync(db);
     }
 }
 
