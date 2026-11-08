@@ -1,0 +1,31 @@
+@model EventDetailResponse
+@{
+    ViewData["Title"] = $"Delete {Model.Name}";
+    var enrolments = (int)(ViewData["EnrolmentCount"] ?? 0);
+}
+
+<div class="rd-auth" style="max-width: 620px">
+    <div class="rd-card rd-card-body">
+        <p class="text-danger fw-semibold text-uppercase small mb-1"><i class="bi bi-exclamation-triangle"></i> Delete event</p>
+        <h1 class="h2">@Model.Name</h1>
+        <p class="text-muted-rd">@Ui.DateAndTime(Model.Date) &middot; @Model.Location &middot; @Model.Categories.Count categor@(Model.Categories.Count == 1 ? "y" : "ies")</p>
+
+        @if (enrolments > 0)
+        {
+            <div class="alert alert-warning rd-alert">
+                <i class="bi bi-people-fill"></i>
+                This event has @enrolments enrolment@(enrolments == 1 ? "" : "s"), so it can't be deleted.
+                Participant records are kept. You can cancel the enrolments instead.
+            </div>
+            <a asp-action="Index" class="btn btn-rd-outline">Back to my events</a>
+        }
+        else
+        {
+            <p>The event and its categories will be removed. This can't be undone.</p>
+            <form asp-action="Delete" asp-route-id="@Model.EventId" method="post" class="d-flex gap-2">
+                <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Delete event</button>
+                <a asp-action="Index" class="btn btn-rd-outline">Cancel</a>
+            </form>
+        }
+    </div>
+</div>

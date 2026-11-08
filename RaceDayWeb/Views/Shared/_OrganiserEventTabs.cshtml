@@ -1,0 +1,25 @@
+@model string
+@* The header and tabs shown on every page that manages one of the organiser's events. *@
+@{
+    var eventId = ViewData["EventId"];
+    var name = ViewData["EventName"] as string;
+    var date = ViewData["EventDate"] as DateTime?;
+    string Active(string tab) => Model == tab ? "active" : "";
+}
+<div class="rd-page-header mb-3">
+    <div>
+        <a asp-controller="ManageEvents" asp-action="Index" class="small text-decoration-none"><i class="bi bi-arrow-left"></i> My events</a>
+        <h1>@name</h1>
+        @if (date is not null)
+        {
+            <div class="text-muted-rd">@Ui.DateAndTime(date.Value) &middot; <span class="rd-countdown">@Ui.Countdown(date.Value, DateTime.Now)</span></div>
+        }
+    </div>
+    <a asp-controller="Events" asp-action="Details" asp-route-id="@eventId" class="btn btn-sm btn-rd-outline"><i class="bi bi-eye"></i> View public page</a>
+</div>
+<ul class="nav rd-tabs">
+    <li class="nav-item"><a class="nav-link @Active("Edit")" asp-controller="ManageEvents" asp-action="Edit" asp-route-id="@eventId"><i class="bi bi-pencil"></i> Details</a></li>
+    <li class="nav-item"><a class="nav-link @Active("Categories")" asp-controller="Categories" asp-action="Index" asp-route-eventId="@eventId"><i class="bi bi-tags"></i> Categories</a></li>
+    <li class="nav-item"><a class="nav-link @Active("Enrolments")" asp-controller="EventEnrolments" asp-action="Index" asp-route-eventId="@eventId"><i class="bi bi-people"></i> Enrolments</a></li>
+    <li class="nav-item"><a class="nav-link @Active("Results")" asp-controller="EventResults" asp-action="Index" asp-route-eventId="@eventId"><i class="bi bi-stopwatch"></i> Results</a></li>
+</ul>

@@ -1,6 +1,12 @@
+using System.Globalization;
 using Microsoft.Extensions.Options;
 using RaceDayWeb.Infrastructure;
 using RaceDayWeb.Services;
+
+// Forms post numbers like 21.1 with a dot. A South African Windows setup expects a comma, so the app uses the
+// invariant culture for parsing on every machine (and in Docker). Ui formats dates for South Africa.
+CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 
