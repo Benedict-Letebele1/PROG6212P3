@@ -1,0 +1,26 @@
+@{
+    var success = TempData[Flash.SuccessKey] as string;
+    var error = TempData[Flash.ErrorKey] as string;
+    var info = TempData[Flash.InfoKey] as string;
+}
+@if (success is not null)
+{
+    <div class="alert alert-success rd-alert alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill"></i> @success
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (error is not null)
+{
+    <div class="alert alert-danger rd-alert alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-octagon-fill"></i> @error
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (info is not null)
+{
+    <div class="alert alert-info rd-alert alert-dismissible fade show" role="alert">
+        <i class="bi bi-info-circle-fill"></i> @info
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}

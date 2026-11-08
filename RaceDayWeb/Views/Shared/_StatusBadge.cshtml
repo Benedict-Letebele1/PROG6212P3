@@ -1,0 +1,6 @@
+@model string
+@* One badge style for every enrolment status: green Confirmed, amber Pending, red Cancelled. *@
+<span class="rd-status @Ui.StatusClass(Model)">
+    <i class="bi @(Model switch { "Confirmed" => "bi-check-circle-fill", "Pending" => "bi-hourglass-split", "Cancelled" => "bi-x-circle-fill", _ => "bi-circle" })"></i>
+    @Model
+</span>
